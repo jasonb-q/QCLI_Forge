@@ -36,7 +36,11 @@ fn main() {
     let opt = Forge::from_args();
     match &opt.command {
         Command::project(Project::new {name, init}) => {
-            utils::new_project(name, *init);
+            let result = utils::new_project(name, *init);
+            match result {
+                Ok(_) => println!("success!"),
+                Err(e) => println!("Error: {}", e)
+            };
         }
         Command::Init {path} => {
             match path {
@@ -49,7 +53,7 @@ fn main() {
                         Err(e) => {
                             println!("Error {}", e);
                         }
-                    }
+                    };
                 }
                 None => {
                     let home_dir: Option<PathBuf> = env::home_dir();

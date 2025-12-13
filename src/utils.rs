@@ -20,20 +20,29 @@ impl Project {
 
 pub fn new_project(name: &str, init: bool) -> Result<()> {
     let date = Utc::now();
-    let path: PathBuf = env::current_dir().expect("Failed to get current dir");
     let name_str = name.to_string();
     let description = "".to_string();
-    let path_str = path.display().to_string();
+    
+    // Get current directory (Project dir)
+    let path: PathBuf = env::current_dir().expect("Failed to get current dir");
+    let path_into = path.into_os_string().into_string();
+    let path_str = match path_into {
+        Ok(val) => val,
+        Err(_) => {
+            bail!("Couldn't convert path into string");
+        }
+    };
 
+    // Getting database path and load database
     let root = match env::var("QCLI_ENV") {
         Ok(val) => val,
         Err(_) => bail!("QCLI env variable is not set"),
     };
-
     let mut db_path = PathBuf::from(root);
     db_path.push("forge.db");
     let connection = Connection::open(db_path)?;
     
+
     connection.execute("INSERT INTO projects (name, description, path, date_created) VALUES (?1, ?2, ?3, ?4)",
     (name_str, description, path_str, date),)?;
     
@@ -54,18 +63,18 @@ pub fn init(path: &Path) -> Result<()> {
     let mut db_path = path.to_path_buf();
     db_path.push("forge.db");
     let connection = Connection::open(db_path.as_path()).expect("Failed to load database");
-    let res = connection.execute("CREATE TABLE IF NOT EXISTS projects
+    let res = connection.execute("CREATE TABLE IF NOT EXISTS projects (
                         id INTEGER PRIMARY KEY,
                         name TEXT,
                         description TEXT,
                         path TEXT,
-                        date_create TEXT", (),)?;
+                        date_created TEXT)", (),)?;
 
-    connection.execute("CREATE TABLE IF NOT EXISTS project_log
+    connection.execute("CREATE TABLE IF NOT EXISTS project_log (
                         id INTEGER PRIMARY KEY,
                         project_id INTEGER,
                         log TEXT,
-                        date TEXT", (),)?;
+                        date TEXT)", (),)?;
     
     Ok(())
 
