@@ -44,5 +44,17 @@ pub fn init(path: &Path) {
     let mut db_path = path.to_path_buf();
     db_path.push("forge.db");
     let connection = Connection::open(db_path.as_path()).expect("Failed to load database");
+    connection.execute("CREATE TABLE IF NOT EXISTS projects
+                        id INTEGER PRIMARY KEY,
+                        name TEXT,
+                        description TEXT,
+                        path TEXT,
+                        date_create DATE", (),);
+    
+    connection.execute("CREATE TABLE IF NOT EXISTS project_log
+                        id INTEGER PRIMARY KEY,
+                        project_id INTEGER,
+                        log TEXT,
+                        date DATE", (),);
 
 }
