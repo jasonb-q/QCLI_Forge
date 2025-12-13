@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
-use rusqlite::{Connection,Result,params};
+use rusqlite::Connection;
 use std::env;
+use anyhow::Result;
 
 mod utils;
 
@@ -40,7 +41,15 @@ fn main() {
         Command::Init {path} => {
             match path {
                 Some(p) => {
-                    utils::init(p.as_path());
+                    let result = utils::init(p.as_path());
+                    match result {
+                        Ok(val) => {
+                            println!("success!");
+                        },
+                        Err(e) => {
+                            println!("Error {}", e);
+                        }
+                    }
                 }
                 None => {
                     let home_dir: Option<PathBuf> = env::home_dir();
