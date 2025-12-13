@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
+use rusqlite::{Connection,Result,params};
+use std::env;
 
 mod utils;
 
@@ -11,6 +13,10 @@ struct Forge {
 
 #[derive(StructOpt, Debug)]
 enum Command {
+    Init {
+        #[structopt(short)]
+        path: Option<PathBuf>,
+    },
     project(Project),
 }
 
@@ -30,6 +36,25 @@ fn main() {
     match &opt.command {
         Command::project(Project::new {name, init}) => {
             utils::new_project(name, *init);
+        }
+        Command::Init {path} => {
+            match path {
+                Some(p) => {
+                    utils::init(p.as_path());
+                }
+                None => {
+                    let home_dir: Option<PathBuf> = env::home_dir();
+                    match home_dir {
+                        Some(mut home) => {
+                            home.push("forge");
+                            utils::init(home.as_path());
+                        }
+                        None => {
+                            println!("Failed to initialize qcli.\nNo home directory found. Supply an initialization dir.");
+                        }
+                    }
+                }
+            }
         }
     }
     println!("{:?}", opt.command);
