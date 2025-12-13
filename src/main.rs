@@ -27,6 +27,8 @@ enum Project {
         #[structopt(short)]
         name: String,
         #[structopt(short)]
+        description: Option<String>,
+        #[structopt(short)]
         init: bool,
     },
 }
@@ -35,8 +37,12 @@ enum Project {
 fn main() {
     let opt = Forge::from_args();
     match &opt.command {
-        Command::project(Project::new {name, init}) => {
-            let result = utils::new_project(name, *init);
+        Command::project(Project::new {name, description, init}) => {
+            let proj_desc = match description {
+                Some(desc) => desc,
+                None => ""
+            };
+            let result = utils::new_project(name, proj_desc, *init);
             match result {
                 Ok(_) => println!("success!"),
                 Err(e) => println!("Error: {}", e)

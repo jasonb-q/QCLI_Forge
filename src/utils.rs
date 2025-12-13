@@ -18,10 +18,10 @@ impl Project {
     }
 }
 
-pub fn new_project(name: &str, init: bool) -> Result<()> {
+pub fn new_project(name: &str, proj_desc: &str, init: bool) -> Result<()> {
     let date = Utc::now();
     let name_str = name.to_string();
-    let description = "".to_string();
+    let description = proj_desc.to_string();
     
     // Get current directory (Project dir)
     let path: PathBuf = env::current_dir().expect("Failed to get current dir");
