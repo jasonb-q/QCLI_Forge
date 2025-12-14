@@ -31,6 +31,10 @@ enum Project {
         #[structopt(short)]
         init: bool,
     },
+    list {
+        #[structopt(short)]
+        name: Option<String>,
+    },
 }
 
 
@@ -46,6 +50,17 @@ fn main() {
             match result {
                 Ok(_) => println!("success!"),
                 Err(e) => println!("Error: {}", e)
+            };
+        }
+        Command::Project(Project::list {name}) => {
+            let name_str = match name {
+                Some(n) => n,
+                None => "!!"
+            };
+            let result = utils::list_project(name_str)
+            match result {
+                Ok(_) => println!("success!"),
+                Err(e) => println!("Error: {e}")
             };
         }
         Command::Init {path} => {

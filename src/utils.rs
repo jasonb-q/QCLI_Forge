@@ -18,6 +18,39 @@ impl Project {
     }
 }
 
+fn get_db_path() -> PathBuf {
+    let root = match env::var("QCLI_ENV") {
+        Ok(val) => val,
+        Err(_) => bail!("QCLI env variable is not set"),
+    };
+    let mut db_path = PathBuf::from(root);
+    db_path.push("forge.db");
+    db_path
+}
+
+pub fn list_project(name: &str) -> Result<()> {
+    let db_path: PathBuf = get_db_path();
+    let connection = Connection::open(db_path)?;
+
+    let mut query = conn.prepare("SELECT * FROM projects")?;
+    let project_iter = query.query_map([], |row| {
+        let path_str: String = row.get(3)?;
+        let date_str: String = row.get(4)?;
+        let path: PathBuf = PathBuf::from(path_str);
+        let date_created: DateTime<Utc> = date_str.parse().unwrap();
+        Ok(Project {
+            name: row.get(1)?,
+            description: row.get(2)?,
+            path: path,
+            date_created: date_created
+        })
+    })?;
+
+
+
+    Ok(())
+}
+
 pub fn new_project(name: &str, proj_desc: &str, init: bool) -> Result<()> {
     let date = Utc::now();
     let name_str = name.to_string();
@@ -33,13 +66,7 @@ pub fn new_project(name: &str, proj_desc: &str, init: bool) -> Result<()> {
         }
     };
 
-    // Getting database path and load database
-    let root = match env::var("QCLI_ENV") {
-        Ok(val) => val,
-        Err(_) => bail!("QCLI env variable is not set"),
-    };
-    let mut db_path = PathBuf::from(root);
-    db_path.push("forge.db");
+    let db_path: PathBuf = get_db_path();
     let connection = Connection::open(db_path)?;
     
 
