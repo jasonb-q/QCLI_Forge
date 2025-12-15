@@ -1,10 +1,9 @@
 use std::path::PathBuf;
 use structopt::StructOpt;
-use rusqlite::Connection;
 use std::env;
-use anyhow::Result;
 
 mod utils;
+mod project_functions;
 
 #[derive(StructOpt, Debug)]
 struct Forge {
@@ -18,12 +17,12 @@ enum Command {
         #[structopt(short)]
         path: Option<PathBuf>,
     },
-    project(Project),
+    Project(Project),
 }
 
 #[derive(StructOpt, Debug)]
 enum Project {
-    new {
+    New {
         #[structopt(short)]
         name: String,
         #[structopt(short)]
@@ -31,7 +30,7 @@ enum Project {
         #[structopt(short)]
         init: bool,
     },
-    list {
+    List {
         #[structopt(short)]
         name: Option<String>,
     },
@@ -41,23 +40,23 @@ enum Project {
 fn main() {
     let opt = Forge::from_args();
     match &opt.command {
-        Command::project(Project::new {name, description, init}) => {
+        Command::Project(Project::New {name, description, init}) => {
             let proj_desc = match description {
                 Some(desc) => desc,
                 None => ""
             };
-            let result = utils::new_project(name, proj_desc, *init);
+            let result = project_functions::new_project(name, proj_desc, *init);
             match result {
                 Ok(_) => println!("success!"),
                 Err(e) => println!("Error: {}", e)
             };
         }
-        Command::project(Project::list {name}) => {
+        Command::Project(Project::List {name}) => {
             let name_str = match name {
                 Some(n) => n,
                 None => "!!"
             };
-            let result = utils::list_project(name_str);
+            let result = project_functions::list_project(name_str);
             match result {
                 Ok(_) => println!("success!"),
                 Err(e) => println!("Error: {e}")
@@ -68,7 +67,7 @@ fn main() {
                 Some(p) => {
                     let result = utils::init(p.as_path());
                     match result {
-                        Ok(val) => {
+                        Ok(_) => {
                             println!("success!");
                         },
                         Err(e) => {
@@ -81,7 +80,15 @@ fn main() {
                     match home_dir {
                         Some(mut home) => {
                             home.push("forge");
-                            utils::init(home.as_path());
+                            let result = utils::init(home.as_path());
+                            match result {
+                                Ok(_) => {
+                                    println!("success!");
+                                },
+                                Err(e) => {
+                                    println!("Error {}", e);
+                                }
+                            };
                         }
                         None => {
                             println!("Failed to initialize qcli.\nNo home directory found. Supply an initialization dir.");
