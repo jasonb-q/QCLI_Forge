@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use chrono::{DateTime, Local, Utc};
 use std::env;
-use rusqlite::Connection;
+use rusqlite::{Connection, Row};
 use anyhow::{Result, Context, bail};
 use std::fs;
 
@@ -18,35 +18,46 @@ impl Project {
     }
 }
 
-fn get_db_path() -> PathBuf {
-    let root = match env::var("QCLI_ENV") {
-        Ok(val) => val,
-        Err(_) => bail!("QCLI env variable is not set"),
-    };
+fn get_db_path() -> Result<PathBuf> {
+    let root = env::var("QCLI_ENV").map_err(|_| anyhow::anyhow!("QCLI env variable isn't set!"))?; 
     let mut db_path = PathBuf::from(root);
     db_path.push("forge.db");
-    db_path
+    Ok(db_path)
+}
+
+fn convert_project_row(row: &Row) -> rusqlite::Result<Project> {
+    let path_str: String = row.get(3)?;
+    let date_str: String = row.get(4)?;
+    let path: PathBuf = PathBuf::from(path_str);
+    let date_created: DateTime<Utc> = date_str.parse().unwrap();
+    Ok(Project {
+        name: row.get(1)?,
+        description: row.get(2)?,
+        path: path,
+        date_created: date_created
+    })
 }
 
 pub fn list_project(name: &str) -> Result<()> {
-    let db_path: PathBuf = get_db_path();
-    let connection = Connection::open(db_path)?;
+    let db_path: PathBuf = get_db_path()?;
+    let conn = Connection::open(db_path)?;
 
-    let mut query = conn.prepare("SELECT * FROM projects")?;
-    let project_iter = query.query_map([], |row| {
-        let path_str: String = row.get(3)?;
-        let date_str: String = row.get(4)?;
-        let path: PathBuf = PathBuf::from(path_str);
-        let date_created: DateTime<Utc> = date_str.parse().unwrap();
-        Ok(Project {
-            name: row.get(1)?,
-            description: row.get(2)?,
-            path: path,
-            date_created: date_created
-        })
-    })?;
+    let mut query;
+    if name == "!!" {
+        query = conn.prepare("SELECT * FROM projects")?;
+    } else {
+        query = conn.prepare("SELECT * FROM projects WHERE name = ?1")?;
+    }
+        
+    let project_iter = if name == "!!" {
+        query.query_map([], convert_project_row)?
+    } else {
+        query.query_map([name], convert_project_row)?
+    };
 
-
+    for proj in project_iter {
+        proj.unwrap().display();
+    }
 
     Ok(())
 }
@@ -66,7 +77,7 @@ pub fn new_project(name: &str, proj_desc: &str, init: bool) -> Result<()> {
         }
     };
 
-    let db_path: PathBuf = get_db_path();
+    let db_path: PathBuf = get_db_path()?;
     let connection = Connection::open(db_path)?;
     
 

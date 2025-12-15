@@ -52,12 +52,12 @@ fn main() {
                 Err(e) => println!("Error: {}", e)
             };
         }
-        Command::Project(Project::list {name}) => {
+        Command::project(Project::list {name}) => {
             let name_str = match name {
                 Some(n) => n,
                 None => "!!"
             };
-            let result = utils::list_project(name_str)
+            let result = utils::list_project(name_str);
             match result {
                 Ok(_) => println!("success!"),
                 Err(e) => println!("Error: {e}")
