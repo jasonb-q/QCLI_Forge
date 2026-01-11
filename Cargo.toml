@@ -7,4 +7,5 @@ edition = "2024"
 anyhow = "1.0.100"
 chrono = "0.4.42"
 rusqlite = { version = "0.37.0", features = ["chrono"] }
+serde_yaml = "0.9.34"
 structopt = { version = "0.3", default-features = false }

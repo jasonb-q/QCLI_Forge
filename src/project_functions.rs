@@ -3,8 +3,15 @@ use chrono::{DateTime, Utc};
 use std::env;
 use rusqlite::{Connection, Row};
 use anyhow::{Result, bail};
-
+use std::error::Error;
+use std::fs::File;
 use crate::utils;
+use serde_yaml;
+
+struct Config {
+    type: String,
+    sub_folders: String
+}
 
 struct Project {
     name: String,
@@ -56,7 +63,14 @@ pub fn list_project(name: &str) -> Result<()> {
     Ok(())
 }
 
-pub fn new_project(name: &str, proj_desc: &str, _init: bool) -> Result<()> {
+pub fn load_config_yaml(config: &str) -> Result<(), Box<dyn Error>> {
+    let file = File::open(config)?;
+    let conf = serde_yaml::from_reader(file)?;
+    println!("yaml file: {}", conf);
+    Ok(())
+}
+
+pub fn new_project(name: &str, proj_desc: &str, _init: bool, config: &str) -> Result<()> {
     let date = Utc::now();
     let name_str = name.to_string();
     let description = proj_desc.to_string();
@@ -74,8 +88,12 @@ pub fn new_project(name: &str, proj_desc: &str, _init: bool) -> Result<()> {
     let db_path: PathBuf = utils::get_db_path()?;
     let connection = Connection::open(db_path)?;
 
-    connection.execute("INSERT INTO projects (name, description, path, date_created) VALUES (?1, ?2, ?3, ?4)",
-    (name_str, description, path_str, date),)?;
+    if config.len() > 0 {
+        list_project(config);
+    }
+
+    //connection.execute("INSERT INTO projects (name, description, path, date_created) VALUES (?1, ?2, ?3, ?4)",
+    //(name_str, description, path_str, date),)?;
     
     Ok(())
 }
